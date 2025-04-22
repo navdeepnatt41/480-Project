@@ -19,6 +19,7 @@ lib64/
 parts/
 sdist/
 var/
+resources/PostgreSQL_Login.txt
 wheels/
 share/python-wheels/
 *.egg-info/

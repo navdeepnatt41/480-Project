@@ -34,5 +34,5 @@ def handle_login() -> None:
     # To-Do: Pass the name to Backend Logic to check if they're in the DB.
     # If they exist, send them to Manager-Login Menu; else, back to Manager-Main
     # with a message saying they need to register first
-    return
+    return None
 
