@@ -1,6 +1,7 @@
 def handle_client() -> None:
     """
-    This function handles the client menu. 
+    This function handles the client login menu. After-wards, control is passed
+    to the actual client menu
     """
     print("Welcome, Driver!")
     print("Please select one of the following")
@@ -12,6 +13,7 @@ def handle_client() -> None:
             handle_registration()
         case "2":
             handle_login()
+            handle_client()
         case "3":
             print("Leaving Driver Menu...") 
             return None 
@@ -32,7 +34,7 @@ def handle_registration() -> None:
 
 def handle_login() -> None:
     """
-    Manager merely logins with their emaill. 
+    Manager merely logins with their email. 
     """
     user_name: str = input("Please enter your email, returning client: ")
     # To-Do: Pass the email to Backend Logic to check if they're in the DB.
@@ -40,4 +42,16 @@ def handle_login() -> None:
     # with a message saying they need to register first
     return
 
-
+def client_main_menu() -> None:
+    """
+    This menu lists all of the possible client menu options 
+    """
+    print("Client Main Menu: Please select an option")
+    client_options: list[str] = [
+        "1. Available car models by date",
+        "2. Book a rent",
+        "3. View your rents",
+        "4. Review a driver!",
+        "5. Book a rent: best driver by model"
+    ]
+    print("\n".join(client_options))

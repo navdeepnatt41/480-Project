@@ -36,3 +36,18 @@ def handle_login() -> None:
     # with a message saying they need to register first
     return None
 
+
+def manager_main_menu() -> None:
+    """
+    Lists all of the manager's options 
+    """
+    print("Manager Main Menu: Please select an option")
+    manager_options: list[str] = [
+        "1. Available car models by date",
+        "2. Book a rent",
+        "3. View your rents",
+        "4. Review a driver!",
+        "5. Book a rent: best driver by model"
+    ]
+    print("\n".join(manager_options))
+    pass

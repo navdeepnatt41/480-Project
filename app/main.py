@@ -1,6 +1,4 @@
-from manager_menu import handle_manager
-from driver_menu import handle_driver
-from client_menu import handle_client
+from CLI import client_menu, driver_menu, manager_menu 
 
 def greeting_and_get_role() -> None:
     """
@@ -10,14 +8,14 @@ def greeting_and_get_role() -> None:
     print("1. Manager")
     print("2. Driver")
     print("3. Client")
-    role = input("Enter the number corresponding to your role: ")
+    role: str = input("Enter the number corresponding to your role: ")
     match role:
         case "1":
-            handle_manager()
+            manager_menu.handle_manager()
         case "2":
-            handle_driver()
+            driver_menu.handle_driver()
         case "3":
-            handle_client()
+            client_menu.handle_client()
         case "x":
             return 
         case _:

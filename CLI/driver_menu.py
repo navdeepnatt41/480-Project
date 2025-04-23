@@ -38,3 +38,17 @@ def handle_login() -> None:
     # If they exist, send them to Driver-Login Menu; else, back to Driver-Main
     # with a message saying they need to register first
     return
+
+# From here on out, it's all the backend stuff BABYYYYYY
+def driver_main_menu() -> None:
+    """
+    Lists all of the driver's options 
+    """
+    print("Driver Main Menu: Please select an option")
+    driver_options: list[str] = [
+        "1. Change your address",
+        "2. List all car models",
+        "3. Declare your drivable car models",
+    ]
+    print("\n".join(driver_options))
+    pass
