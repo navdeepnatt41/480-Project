@@ -1,4 +1,4 @@
-def handle_client() -> None:
+def handle_client(cursor) -> None:
     """
     This function handles the client login menu. After-wards, control is passed
     to the actual client menu
@@ -55,3 +55,29 @@ def client_main_menu() -> None:
         "5. Book a rent: best driver by model"
     ]
     print("\n".join(client_options))
+    match input(">"):
+        case "1":
+            handle_date_car_models()
+        case "2":
+            handle_rent_booking()
+        case "3":
+            handle_rent_viewing()
+        case "4":
+            handle_driver_review()
+        case "5":
+            handle_best_driver_rent()
+       
+def handle_date_car_models():
+    pass
+
+def handle_rent_booking():
+    pass
+
+def handle_rent_viewing():
+    pass
+
+def handle_driver_review():
+    pass
+
+def handle_best_driver_rent():
+    pass
