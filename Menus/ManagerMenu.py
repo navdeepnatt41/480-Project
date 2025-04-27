@@ -40,13 +40,53 @@ def handle_login():
     print("Returning to login menu...")
 
 def add_car():
-  pass
+    """Handles adding a new car to the system."""
+    pass
 
 def remove_car():
-  pass
+    """Handles removing an existing car from the system."""
+    pass
 
 def add_driver():
-  pass
+    """Handles adding a new driver to the system."""
+    pass
+
+def remove_driver():
+    """Handles removing an existing driver from the system."""
+    pass
+
+def add_model():
+    """Handles adding a new car model to the system."""
+    pass
+
+def remove_model():
+    """Handles removing a car model from the system."""
+    pass
+
+def top_k_clients():
+    """Handles fetching and displaying the top-K clients."""
+    pass
+
+def all_models_and_rents():
+    """Handles displaying all models along with their rents."""
+    pass
+
+def driver_stats():
+    """Handles displaying driver statistics."""
+    pass
+
+def find_clients_by_city_pair():
+    """Handles finding clients based on city pairs."""
+    pass
+
+def problematic_local_drivers():
+    """Handles identifying problematic local drivers."""
+    pass
+
+def driver_ratings_and_rents_by_car_brand():
+    """Handles showing driver ratings and rents, filtered by car brand."""
+    pass
+
 
 def manager_main_menu():
   options: list[str] = [
@@ -79,7 +119,7 @@ def manager_start_menu():
       handle_register()
       pass
     case "1":
-      # handle login
+      handle_login()
       pass
     case _:
       print("Invalid Command.")
