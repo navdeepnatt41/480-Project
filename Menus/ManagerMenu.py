@@ -39,8 +39,34 @@ def handle_login():
     print("An error has occurred. Maybe check your formats?")
     print("Returning to login menu...")
 
+def add_car():
+  pass
+
+def remove_car():
+  pass
+
+def add_driver():
+  pass
+
 def manager_main_menu():
-  options: list[str]
+  options: list[str] = [
+    "1. Add a Car",
+    "2. Remove a Car",
+    "3. Add a Driver", 
+    "4. Add a Model",
+    "5. Remove a Model",
+    "6. Remove a Driver",
+    "7. Top-K Clients",
+    "8. All Models and Rents",
+    "9. Driver Stats",
+    "10. Find Clients by City Pair",
+    "11. Problematic Local Drivers",
+    "12. Driver Ratings and Rents by Car Brand"
+  ]
+  print("Manager Main Menu\n\n")
+  utils.print_menu_options(options)
+  user_input: str = input("Please provide an option number: ")
+
 
 def manager_start_menu():
   utils.print_menu_options(["- Login", "- Register", "- Return to Main Menu"]) 

@@ -5,17 +5,17 @@ import utils
 from Menus import ManagerMenu
 
 def main_menu() -> None:
-  print("Please select one of the following roles/options:")
-  utils.print_menu_options(["- Client", "- Driver", "- Manager", "- x (to exit)"])
+  print("Please provide an option number, or 'x' to exist")
+  utils.print_menu_options(["1. Client", "2. Driver", "3. Manager"])
   selected_option: str = input("> ")
   match selected_option:
-    case "Client":
+    case "1":
       # Start Client Menu 
       pass
-    case "Driver":
+    case "2":
       # Start Driver Menu
       pass
-    case "Manager":
+    case "3":
       print("Welcome, manager. Please select an option:") 
       # Start Manager Menu 
       ManagerMenu.manager_start_menu()
