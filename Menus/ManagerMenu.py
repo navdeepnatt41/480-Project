@@ -40,8 +40,10 @@ def handle_login():
     print("Returning to login menu...")
 
 def add_car():
-    """Handles adding a new car to the system."""
-    pass
+  """Handles adding a new car to the system."""
+  car_id: str = input("Enter your car id: ")
+  
+  pass
 
 def remove_car():
     """Handles removing an existing car from the system."""
