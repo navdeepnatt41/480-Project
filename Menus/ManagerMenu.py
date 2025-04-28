@@ -19,9 +19,7 @@ def handle_register():
       db.run_sql(sql=insert_query, vals=[ssn, name, email], is_crud=True)
       
       print("New Manager Added. Logging you in...")
-      # Placeholder for going to manager login menu
-      return
-
+      manager_main_menu()
   except ValueError:
       print("SSN format not accepted. Returning to manager login menu...")
       
@@ -80,12 +78,27 @@ def add_driver():
     house_num: str = input("Enter Driver's Address - House Number: ")
     road_name: str = input("Enter Driver's Address - Road Name: ")
     name: str = input("Enter Driver's Name")
-    db.run_dql("sql = INSERT INTO Address (%s, %s, %s)")
-    pass
+    db.run_dql(
+        sql = "INSERT INTO Address (city, house_number, road_name) VALUES (%s, %s, %s)",
+        vals = [city, house_num, road_name],
+        is_crud = True
+    )
+    db.run_sql(
+        sql = "INSERT INTO Driver (driver_name, city, house_number, road_name) VALUES (%s, %s, %s, %s)",
+        vals = [name, city, house_num, road_name],
+        is_crud = False
+    )
+    print("Inserted Driver")
+
 
 def remove_driver():
     """Handles removing an existing driver from the system."""
-    pass
+    name: str = input("Provide the name of the driver to remove: ") 
+    db.run_sql(
+        sql = "DELETE FROM Driver WHERE name = %s",
+        vals = [name],
+        is_crud = True
+    )
 
 def add_model():
     """Handles adding a new car model to the system."""
@@ -97,11 +110,33 @@ def remove_model():
 
 def top_k_clients():
     """Handles fetching and displaying the top-K clients."""
-    pass
+    k: str = input("How many top clients by rent to display: ")
+    sql = """
+            SELECT client_name
+            FROM Client
+            JOIN Rent
+                ON Client.email = Rent.email
+            GROUP BY Client.name
+            ORDER BY COUNT(Rent.rent_id) desc
+            LIMIT %s
+          """
+    print(db.run_sql(sql = sql, vals = [k], is_crud=False))
 
 def all_models_and_rents():
     """Handles displaying all models along with their rents."""
-    pass
+    sql = """
+            SELECT Model.car_id, Model.model_id, COUNT(Rent.rent_id)
+            FROM Model
+            JOIN Rent
+                ON Model.car_id = Rent.car_id
+                AND Model.model_id = Rent.model_id
+            GROUP BY Model.car_id, Model.model_id;
+          """
+    print(db.run_sql(
+        sql = sql,
+        vals = [],
+        is_crud = False
+    ))
 
 def driver_stats():
     """Handles displaying driver statistics."""
@@ -139,7 +174,7 @@ def manager_main_menu():
     while True:
         print("\nManager Main Menu\n")
         utils.print_menu_options(options)
-        user_input: str = input("Please provide an option number: ")
+        user_input: str = input("Please provide an option number, or 'x' to return to manager login menu: ")
 
         match user_input:
             case "0":
@@ -174,21 +209,19 @@ def manager_main_menu():
                 print("Invalid option. Please enter a number from the menu.")
 
 def manager_start_menu():
-  utils.print_menu_options(["- Login", "- Register", "- Return to Main Menu"]) 
-  option: str = input("> ")
-  match option:
-    case "3":
-      print("Returning to main menu...")
-      return
-    case "2":
-      handle_register()
-      pass
-    case "1":
-      handle_login()
-      pass
-    case _:
-      print("Invalid Command.")
-  manager_start_menu()
+  while True:
+    utils.print_menu_options(["- Login", "- Register", "- Return to Main Menu"]) 
+    option: str = input("> ")
+    match option:
+        case "3":
+            print("Returning to main menu...")
+            return
+        case "2":
+            handle_register()
+        case "1":
+            handle_login()
+        case _:
+            print("Invalid Command.")
 
       
 
