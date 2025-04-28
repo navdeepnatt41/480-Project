@@ -23,3 +23,11 @@ def run_sql(sql: str, vals: list, is_crud: bool):
 
 def kill_conn() -> None:
   conn.close()
+
+if __name__ == "__main__":
+  while True:
+    match input("CRUD OR NAH"):
+      case "CRUD":
+        print(run_sql(input(), [], is_crud=True))
+      case "NAH":
+        print(run_sql(input(), [], is_crud=False))

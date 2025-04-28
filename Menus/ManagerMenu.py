@@ -33,6 +33,7 @@ def handle_login():
       
     if result[0][0] > 0:
       print("Welcome back! Taking you to your main menu...")
+      manager_main_menu()
       return
   
   except Exception as e:
@@ -42,15 +43,44 @@ def handle_login():
 def add_car():
   """Handles adding a new car to the system."""
   car_id: str = input("Enter your car id: ")
-  
+  brand: str = input("Enter the car's brand: ")
+
+  result = db.run_sql(
+     sql = "SELECT 1 FROM Car where brand LIKE %s",
+     vals = [car_id],
+     is_crud = False
+  )
+
+  if result == []:
+     db.run_sql(
+        sql = "INSERT INTO Car (car_id, brand) VALUES (%s, %s)",
+        vals = [car_id, brand],
+        is_crud = True
+     )
+     print("Car inserted into db")
+  else:
+     print("Car already exists")
+  manager_main_menu() 
+  breakpoint()
+
   pass
 
 def remove_car():
     """Handles removing an existing car from the system."""
-    pass
+    car_id: str = input("Enter car id to delete: ")
+    db.run_sql(sql = "DELETE FROM Rent WHERE car_id = %s;", vals=[], is_crud=True)
+    db.run_sql(sql = "DELETE FROM ModelDriver WHERE car_id = %s;", vals=[], is_crud=True)
+    db.run_sql(sql = "DELETE FROM Model WHERE car_id = %s;", vals=[], is_crud=True)
+    db.run_sql(sql = "DELETE FROM Car WHERE car_id = %s;", vals=[], is_crud=True)
+    print("Deleted car")
 
 def add_driver():
     """Handles adding a new driver to the system."""
+    city: str = input("Enter Driver's Address - City: ")
+    house_num: str = input("Enter Driver's Address - House Number: ")
+    road_name: str = input("Enter Driver's Address - Road Name: ")
+    name: str = input("Enter Driver's Name")
+    db.run_dql("sql = INSERT INTO Address (%s, %s, %s)")
     pass
 
 def remove_driver():
@@ -89,26 +119,59 @@ def driver_ratings_and_rents_by_car_brand():
     """Handles showing driver ratings and rents, filtered by car brand."""
     pass
 
-
 def manager_main_menu():
-  options: list[str] = [
-    "1. Add a Car",
-    "2. Remove a Car",
-    "3. Add a Driver", 
-    "4. Add a Model",
-    "5. Remove a Model",
-    "6. Remove a Driver",
-    "7. Top-K Clients",
-    "8. All Models and Rents",
-    "9. Driver Stats",
-    "10. Find Clients by City Pair",
-    "11. Problematic Local Drivers",
-    "12. Driver Ratings and Rents by Car Brand"
-  ]
-  print("Manager Main Menu\n\n")
-  utils.print_menu_options(options)
-  user_input: str = input("Please provide an option number: ")
+    options: list[str] = [
+        "0. Exit",
+        "1. Add a Car",
+        "2. Remove a Car",
+        "3. Add a Driver", 
+        "4. Add a Model",
+        "5. Remove a Model",
+        "6. Remove a Driver",
+        "7. Top-K Clients",
+        "8. All Models and Rents",
+        "9. Driver Stats",
+        "10. Find Clients by City Pair",
+        "11. Problematic Local Drivers",
+        "12. Driver Ratings and Rents by Car Brand"
+    ]
+    
+    while True:
+        print("\nManager Main Menu\n")
+        utils.print_menu_options(options)
+        user_input: str = input("Please provide an option number: ")
 
+        match user_input:
+            case "0":
+                print("Exiting Manager Menu. Goodbye!")
+                break  # Exit the loop safely
+
+            case "1":
+                add_car()
+            case "2":
+                remove_car()
+            case "3":
+                add_driver()
+            case "4":
+                add_model()
+            case "5":
+                remove_model()
+            case "6":
+                remove_driver()
+            case "7":
+                top_k_clients()
+            case "8":
+                all_models_and_rents()
+            case "9":
+                driver_stats()
+            case "10":
+                find_clients_by_city_pair()
+            case "11":
+                problematic_local_drivers()
+            case "12":
+                driver_ratings_and_rents_by_car_brand()
+            case _:
+                print("Invalid option. Please enter a number from the menu.")
 
 def manager_start_menu():
   utils.print_menu_options(["- Login", "- Register", "- Return to Main Menu"]) 
