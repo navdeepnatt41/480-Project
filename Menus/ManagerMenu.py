@@ -140,11 +140,37 @@ def all_models_and_rents():
 
 def driver_stats():
     """Handles displaying driver statistics."""
-    pass
+    sql = """
+            SELECT 
+            d.driver_name,
+            COUNT(DISTINCT r.rent_id) AS total_rents,
+            AVG(rv.rating) AS average_rating
+            FROM 
+                Driver d
+            LEFT JOIN 
+                Rent r ON d.driver_name = r.driver_name
+            LEFT JOIN 
+                Review rv ON d.driver_name = rv.driver_name
+            GROUP BY 
+                d.driver_name;
+
+            """ 
 
 def find_clients_by_city_pair():
     """Handles finding clients based on city pairs."""
-    pass
+    sql =   """
+            SELECT DISTINCT c.email, c.client_name
+            FROM Client c
+            JOIN ClientAddress ca ON c.email = ca.email
+            JOIN Address a1 ON ca.city = a1.city AND ca.house_number = a1.house_number AND ca.road_name = a1.road_name
+            JOIN Rent r ON c.email = r.email
+            JOIN Driver d ON r.driver_name = d.driver_name
+            JOIN Address a2 ON d.city = a2.city AND d.house_number = a2.house_number AND d.road_name = a2.road_name
+            WHERE a1.city = :C1
+            AND a2.city = :C2;
+            
+            """
+    pass 
 
 def problematic_local_drivers():
     """Handles identifying problematic local drivers."""
