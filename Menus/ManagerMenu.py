@@ -1,253 +1,288 @@
-
 import utils
-import Backend.db_conn as db
+from Backend.db_conn import run_sql
 
-def handle_register():
-  try:
-      ssn: int = int(input("Enter Your SSN: "))
-      name: str = input("Enter Your Name: ") 
-      email: str = input("Enter Your Email: ")
-      
-      ssn_check_query = "SELECT COUNT(*) FROM Managers WHERE ssn = %s"
-      result = db.run_sql(sql=ssn_check_query, vals=[ssn], is_crud=False)
-      
-      if result[0][0] > 0:
-          print("Error: This Manager exists. Returning to manager login menu...") 
-          return
-      
-      insert_query = "INSERT INTO Managers (ssn, name, email) VALUES (%s, %s, %s)"
-      db.run_sql(sql=insert_query, vals=[ssn, name, email], is_crud=True)
-      
-      print("New Manager Added. Logging you in...")
-      manager_main_menu()
-  except ValueError:
-      print("SSN format not accepted. Returning to manager login menu...")
-      
-def handle_login():
-  try:
-    ssn: int = int(input("Enter Your SSN: "))
-    ssn_check_query: str = "SELECT COUNT(*) FROM Managers WHERE ssn = %s"
-    result: list = db.run_sql(sql=ssn_check_query, vals=[ssn], is_crud=False)
-      
-    if result[0][0] > 0:
-      print("Welcome back! Taking you to your main menu...")
-      manager_main_menu()
-      return
-  
-  except Exception as e:
-    print("An error has occurred. Maybe check your formats?")
-    print("Returning to login menu...")
+# ─── Auth Handlers ─────────────────────────────────────────────────────────────
+
+def register_manager():
+    """
+    Register a brand new manager.
+    """
+    try:
+        ssn   = int(input("Enter Your SSN: "))
+        name  = input("Enter Your Name: ")
+        email = input("Enter Your Email: ")
+
+        # Check for existing SSN
+        exists = run_sql(
+            sql="SELECT COUNT(*) FROM Managers WHERE ssn = %s",
+            vals=[ssn],
+            is_crud=False
+        )[0][0]
+        if exists:
+            print("Error: Manager already exists.")
+            return
+
+        # Insert new manager
+        run_sql(
+            sql="INSERT INTO Managers (ssn, name, email) VALUES (%s, %s, %s)",
+            vals=[ssn, name, email],
+            is_crud=True
+        )
+        print("Manager registered successfully.")
+
+    except ValueError:
+        print("Invalid SSN format.")
+    except Exception as e:
+        print(f"Registration failed: {e}")
+
+
+def login_manager():
+    """
+    Login an existing manager by SSN.
+    """
+    try:
+        ssn = int(input("Enter Your SSN: "))
+        exists = run_sql(
+            sql="SELECT COUNT(*) FROM Managers WHERE ssn = %s",
+            vals=[ssn],
+            is_crud=False
+        )[0][0]
+        if exists:
+            print("Login successful!")
+            return True
+        else:
+            print("No manager found with that SSN.")
+    except ValueError:
+        print("Invalid SSN format.")
+    except Exception as e:
+        print(f"Login error: {e}")
+    return False
+
+
+# ─── Car Handlers ──────────────────────────────────────────────────────────────
 
 def add_car():
-  """Handles adding a new car to the system."""
-  car_id: str = input("Enter your car id: ")
-  brand: str = input("Enter the car's brand: ")
+    car_id = input("Enter new car ID: ")
+    brand  = input("Enter car brand: ")
 
-  result = db.run_sql(
-     sql = "SELECT 1 FROM Car where brand LIKE %s",
-     vals = [car_id],
-     is_crud = False
-  )
+    exists = run_sql(
+        sql="SELECT 1 FROM Car WHERE car_id = %s",
+        vals=[car_id],
+        is_crud=False
+    )
+    if exists:
+        print("That car already exists.")
+    else:
+        run_sql(
+            sql="INSERT INTO Car (car_id, brand) VALUES (%s, %s)",
+            vals=[car_id, brand],
+            is_crud=True
+        )
+        print("Car inserted.")
 
-  if result == []:
-     db.run_sql(
-        sql = "INSERT INTO Car (car_id, brand) VALUES (%s, %s)",
-        vals = [car_id, brand],
-        is_crud = True
-     )
-     print("Car inserted into db")
-  else:
-     print("Car already exists")
-  manager_main_menu() 
-  breakpoint()
-
-  pass
 
 def remove_car():
-    """Handles removing an existing car from the system."""
-    car_id: str = input("Enter car id to delete: ")
-    db.run_sql(sql = "DELETE FROM Rent WHERE car_id = %s;", vals=[], is_crud=True)
-    db.run_sql(sql = "DELETE FROM ModelDriver WHERE car_id = %s;", vals=[], is_crud=True)
-    db.run_sql(sql = "DELETE FROM Model WHERE car_id = %s;", vals=[], is_crud=True)
-    db.run_sql(sql = "DELETE FROM Car WHERE car_id = %s;", vals=[], is_crud=True)
-    print("Deleted car")
+    car_id = input("Enter car ID to delete: ")
+    # delete in correct dependency order
+    run_sql("DELETE FROM Rent WHERE car_id = %s",     [car_id], is_crud=True)
+    run_sql("DELETE FROM ModelDriver WHERE car_id = %s",[car_id], is_crud=True)
+    run_sql("DELETE FROM Model WHERE car_id = %s",    [car_id], is_crud=True)
+    run_sql("DELETE FROM Car WHERE car_id = %s",      [car_id], is_crud=True)
+    print("Car deleted.")
+
+
+# ─── Driver Handlers ──────────────────────────────────────────────────────────
 
 def add_driver():
-    """Handles adding a new driver to the system."""
-    city: str = input("Enter Driver's Address - City: ")
-    house_num: str = input("Enter Driver's Address - House Number: ")
-    road_name: str = input("Enter Driver's Address - Road Name: ")
-    name: str = input("Enter Driver's Name")
-    db.run_dql(
-        sql = "INSERT INTO Address (city, house_number, road_name) VALUES (%s, %s, %s)",
-        vals = [city, house_num, road_name],
-        is_crud = True
+    city      = input("Driver city: ")
+    house_num = input("Driver house number: ")
+    road_name = input("Driver road name: ")
+    name      = input("Driver name: ")
+
+    run_sql(
+        sql="INSERT INTO Address (city, house_number, road_name) VALUES (%s, %s, %s)",
+        vals=[city, house_num, road_name],
+        is_crud=True
     )
-    db.run_sql(
-        sql = "INSERT INTO Driver (driver_name, city, house_number, road_name) VALUES (%s, %s, %s, %s)",
-        vals = [name, city, house_num, road_name],
-        is_crud = False
+    run_sql(
+        sql=(
+            "INSERT INTO Driver "
+            "(driver_name, city, house_number, road_name) "
+            "VALUES (%s, %s, %s, %s)"
+        ),
+        vals=[name, city, house_num, road_name],
+        is_crud=True
     )
-    print("Inserted Driver")
+    print("Driver added.")
 
 
 def remove_driver():
-    """Handles removing an existing driver from the system."""
-    name: str = input("Provide the name of the driver to remove: ") 
-    db.run_sql(
-        sql = "DELETE FROM Driver WHERE name = %s",
-        vals = [name],
-        is_crud = True
-    )
+    name = input("Enter driver name to remove: ")
+    run_sql("DELETE FROM Driver WHERE driver_name = %s", [name], is_crud=True)
+    print("Driver removed.")
 
-def add_model():
-    """Handles adding a new car model to the system."""
-    pass
 
-def remove_model():
-    """Handles removing a car model from the system."""
-    pass
+# ─── Reporting Handlers ──────────────────────────────────────────────────────
 
 def top_k_clients():
-    """Handles fetching and displaying the top-K clients."""
-    k: str = input("How many top clients by rent to display: ")
-    sql = """
-            SELECT client_name
-            FROM Client
-            JOIN Rent
-                ON Client.email = Rent.email
-            GROUP BY Client.name
-            ORDER BY COUNT(Rent.rent_id) desc
-            LIMIT %s
-          """
-    print(db.run_sql(sql = sql, vals = [k], is_crud=False))
+    try:
+        k = int(input("How many top clients to show? "))
+    except ValueError:
+        print("Please enter a number.")
+        return
+
+    rows = run_sql(
+        sql=(
+            "SELECT c.client_name, c.email, COUNT(r.rent_id) AS rents "
+            "FROM Client c JOIN Rent r ON c.email = r.email "
+            "GROUP BY c.client_name, c.email "
+            "ORDER BY rents DESC LIMIT %s"
+        ),
+        vals=[k],
+        is_crud=False
+    )
+    for name, email, count in rows:
+        print(f"{name} <{email}> — {count} rents")
+
 
 def all_models_and_rents():
-    """Handles displaying all models along with their rents."""
-    sql = """
-            SELECT Model.car_id, Model.model_id, COUNT(Rent.rent_id)
-            FROM Model
-            JOIN Rent
-                ON Model.car_id = Rent.car_id
-                AND Model.model_id = Rent.model_id
-            GROUP BY Model.car_id, Model.model_id;
-          """
-    print(db.run_sql(
-        sql = sql,
-        vals = [],
-        is_crud = False
-    ))
+    rows = run_sql(
+        sql=(
+            "SELECT m.car_id, m.model_id, COUNT(r.rent_id) "
+            "FROM Model m JOIN Rent r "
+            "  ON m.car_id = r.car_id AND m.model_id = r.model_id "
+            "GROUP BY m.car_id, m.model_id"
+        ),
+        vals=[],
+        is_crud=False
+    )
+    for car_id, model_id, cnt in rows:
+        print(f"Car {car_id}, Model {model_id}: {cnt} rents")
+
 
 def driver_stats():
-    """Handles displaying driver statistics."""
-    sql = """
-            SELECT 
-            d.driver_name,
-            COUNT(DISTINCT r.rent_id) AS total_rents,
-            AVG(rv.rating) AS average_rating
-            FROM 
-                Driver d
-            LEFT JOIN 
-                Rent r ON d.driver_name = r.driver_name
-            LEFT JOIN 
-                Review rv ON d.driver_name = rv.driver_name
-            GROUP BY 
-                d.driver_name;
+    rows = run_sql(
+        sql=(
+            "SELECT d.driver_name, COUNT(r.rent_id) AS total_rents, "
+            "AVG(rv.rating) AS avg_rating "
+            "FROM Driver d "
+            "LEFT JOIN Rent r ON d.driver_name = r.driver_name "
+            "LEFT JOIN Review rv ON d.driver_name = rv.driver_name "
+            "GROUP BY d.driver_name"
+        ),
+        vals=[],
+        is_crud=False
+    )
+    for name, total, avg in rows:
+        print(f"{name}: {total} rents, avg rating {avg:.2f}")
 
-            """ 
 
 def find_clients_by_city_pair():
-    """Handles finding clients based on city pairs."""
-    sql =   """
-            SELECT DISTINCT c.email, c.client_name
-            FROM Client c
-            JOIN ClientAddress ca ON c.email = ca.email
-            JOIN Address a1 ON ca.city = a1.city AND ca.house_number = a1.house_number AND ca.road_name = a1.road_name
-            JOIN Rent r ON c.email = r.email
-            JOIN Driver d ON r.driver_name = d.driver_name
-            JOIN Address a2 ON d.city = a2.city AND d.house_number = a2.house_number AND d.road_name = a2.road_name
-            WHERE a1.city = :C1
-            AND a2.city = :C2;
-            
-            """
-    pass 
+    c1 = input("City #1: ")
+    c2 = input("City #2: ")
+    rows = run_sql(
+        sql=(
+            "SELECT DISTINCT c.email, c.client_name "
+            "FROM Client c "
+            "  JOIN ClientAddress ca ON c.email = ca.email "
+            "  JOIN Address a1 ON (ca.city,a1.house_number,ca.road_name) = "
+            "                   (a1.city,a1.house_number,a1.road_name) "
+            "  JOIN Rent r ON c.email = r.email "
+            "  JOIN Driver d ON r.driver_name = d.driver_name "
+            "  JOIN Address a2 ON (d.city,d.house_number,d.road_name) = "
+            "                   (a2.city,a2.house_number,a2.road_name) "
+            "WHERE a1.city = %s AND a2.city = %s"
+        ),
+        vals=[c1, c2],
+        is_crud=False
+    )
+    for email, name in rows:
+        print(f"{name} <{email}>")
+
+
+# ─── What's Left ──────────────────────────────────────────
+
+def add_model():
+    print("add_model() not yet implemented")
+
+
+def remove_model():
+    print("remove_model() not yet implemented")
+
 
 def problematic_local_drivers():
-    """Handles identifying problematic local drivers."""
-    pass
+    print("problematic_local_drivers() not yet implemented")
+
 
 def driver_ratings_and_rents_by_car_brand():
-    """Handles showing driver ratings and rents, filtered by car brand."""
-    pass
+    print("driver_ratings_and_rents_by_car_brand() not yet implemented")
+
+
+# ─── Menu Wiring ──────────────────────────────────────────────────────────────
+
+MENU_ACTIONS = {
+    "1": add_car,
+    "2": remove_car,
+    "3": add_driver,
+    "4": add_model,
+    "5": remove_model,
+    "6": remove_driver,
+    "7": top_k_clients,
+    "8": all_models_and_rents,
+    "9": driver_stats,
+    "10": find_clients_by_city_pair,
+    "11": problematic_local_drivers,
+    "12": driver_ratings_and_rents_by_car_brand,
+}
 
 def manager_main_menu():
-    options: list[str] = [
+    options = [
         "0. Exit",
         "1. Add a Car",
         "2. Remove a Car",
-        "3. Add a Driver", 
+        "3. Add a Driver",
         "4. Add a Model",
         "5. Remove a Model",
         "6. Remove a Driver",
         "7. Top-K Clients",
-        "8. All Models and Rents",
+        "8. All Models & Rents",
         "9. Driver Stats",
         "10. Find Clients by City Pair",
         "11. Problematic Local Drivers",
-        "12. Driver Ratings and Rents by Car Brand"
+        "12. Driver Ratings & Rents by Brand",
     ]
-    
+
     while True:
-        print("\nManager Main Menu\n")
+        print("\nManager Main Menu")
         utils.print_menu_options(options)
-        user_input: str = input("Please provide an option number, or 'x' to return to manager login menu: ")
+        choice = input("> ").strip()
+        if choice == "0":
+            print("Goodbye!")
+            break
 
-        match user_input:
-            case "0":
-                print("Exiting Manager Menu. Goodbye!")
-                break  # Exit the loop safely
+        action = MENU_ACTIONS.get(choice)
+        if action:
+            action()
+        else:
+            print("Invalid choice; please select from the menu.")
 
-            case "1":
-                add_car()
-            case "2":
-                remove_car()
-            case "3":
-                add_driver()
-            case "4":
-                add_model()
-            case "5":
-                remove_model()
-            case "6":
-                remove_driver()
-            case "7":
-                top_k_clients()
-            case "8":
-                all_models_and_rents()
-            case "9":
-                driver_stats()
-            case "10":
-                find_clients_by_city_pair()
-            case "11":
-                problematic_local_drivers()
-            case "12":
-                driver_ratings_and_rents_by_car_brand()
-            case _:
-                print("Invalid option. Please enter a number from the menu.")
 
 def manager_start_menu():
-  while True:
-    utils.print_menu_options(["- Login", "- Register", "- Return to Main Menu"]) 
-    option: str = input("> ")
-    match option:
-        case "3":
-            print("Returning to main menu...")
-            return
-        case "2":
-            handle_register()
-        case "1":
-            handle_login()
-        case _:
-            print("Invalid Command.")
+    """Initial login/register loop."""
+    options = ["1. Login", "2. Register", "3. Return to Main Menu"]
+    while True:
+        utils.print_menu_options(options)
+        choice = input("> ").strip()
+        if choice == "1":
+            if login_manager():
+                manager_main_menu()
+        elif choice == "2":
+            register_manager()
+        elif choice == "3" or choice.lower() == "x":
+            break
+        else:
+            print("Invalid command.")
 
-      
 
+if __name__ == "__main__":
+    manager_start_menu()

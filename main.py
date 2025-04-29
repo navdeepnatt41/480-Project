@@ -10,7 +10,8 @@ def main_menu() -> None:
   driver, or manager. 
   """
   while True:
-    print("Please provide an option number, or 'x' to exist")
+    print("-------------------------------------------------\n")
+    print("Please provide an option number, or 'x' to exit")
     utils.print_menu_options(["1. Client", "2. Driver", "3. Manager"])
     selected_option: str = input("> ")
     match selected_option:
@@ -21,7 +22,9 @@ def main_menu() -> None:
         # Start Driver Menu
         pass
       case "3":
-        print("Welcome, manager. Please select an option:") 
+        print()
+        print("Welcome, manager. Please select an option, or 'x' to return:") 
+        print("-------------------------------------------------------\n")
         # Start Manager Menu 
         ManagerMenu.manager_start_menu()
         pass 
@@ -31,4 +34,6 @@ def main_menu() -> None:
       case _: 
         print("Invalid Command - Please try again") 
     
-main_menu()
+if __name__ == "__main__":
+  print("Welcome to the Taxi Rental Service")
+  main_menu()

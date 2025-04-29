@@ -18,7 +18,7 @@ def run_sql(sql: str, vals: list, is_crud: bool):
         else:
           conn.commit()
       except ps.Error as e:
-        print("Error Occurred: " + e)
+        print("Error Occurred: " + str(e))
         conn.rollback()
 
 def kill_conn() -> None:
