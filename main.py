@@ -2,7 +2,7 @@
 This file is the main file that starts the entire application. It has a main menu and passes control to the respective packages.
 """
 import utils
-from Menus import ManagerMenu
+from Menus import ManagerMenu, DriverMenu
 
 def main_menu() -> None:
   """
@@ -20,6 +20,7 @@ def main_menu() -> None:
         pass
       case "2":
         # Start Driver Menu
+        DriverMenu.driver_login_menu() 
         pass
       case "3":
         print()

@@ -8,10 +8,14 @@ def register_manager():
     Register a brand new manager.
     """
     try:
-        ssn   = int(input("Enter Your SSN: "))
+        ssn   = (input("Enter Your SSN: "))
+        if len(ssn) < 8:
+            print("Haram")
+            return
         name  = input("Enter Your Name: ")
         email = input("Enter Your Email: ")
 
+        # Probably use regex for SSN parsing
         # Check for existing SSN
         exists = run_sql(
             sql="SELECT COUNT(*) FROM Managers WHERE ssn = %s",
@@ -41,7 +45,10 @@ def login_manager():
     Login an existing manager by SSN.
     """
     try:
-        ssn = int(input("Enter Your SSN: "))
+        ssn = (input("Enter Your SSN: "))
+        if len(ssn) < 8:
+            print("Extra not good")
+            return
         exists = run_sql(
             sql="SELECT COUNT(*) FROM Managers WHERE ssn = %s",
             vals=[ssn],
@@ -203,19 +210,119 @@ def find_clients_by_city_pair():
 # ─── What's Left ──────────────────────────────────────────
 
 def add_model():
-    print("add_model() not yet implemented")
 
+    car_id   = input("Enter a existing car_id: ").strip()
+    model_id = input("Enter the model_id: ").strip()
+    color    = input("Enter the color of the car: ").strip()
+    year     = input("Enter the year of the car (YYYY): ").strip()
+    trans    = input("Enter the transmission of the car (manual/automatic): ").strip().lower()
+
+    # Error checking
+    if not run_sql("SELECT 1 FROM Car WHERE car_id = %s",
+                [car_id], is_crud=False):
+        print("That car_id is not in Car.  Insert the car first.")
+        return
+    if run_sql("SELECT 1 FROM Model WHERE car_id = %s AND model_id = %s",
+               [car_id, model_id], is_crud=False):
+        print("That (car_id, model_id) already exists.")
+        return
+
+    # Insert user input into the database
+    run_sql(
+        sql=("INSERT INTO Model "
+             "(model_id, color, year, transmission, car_id) "
+             "VALUES (%s, %s, %s, %s, %s)"),
+        vals=[model_id, color, f"{year}-01-01", trans, car_id],  # DATE needs YYYY-MM-DD
+        is_crud=True
+    )
+    print("Model inserted.")
 
 def remove_model():
-    print("remove_model() not yet implemented")
+    """
+    This function is for deleting a model from the model table.
+    To do this we need to have car_id and model_id.
+    We also need to take into account the ModelDriver table.
+    If we are going to delete the model that has a particular model_id
+    we also need to delete it from the ModelDriver table.   
+    """
+    car_id = input("Enter a existing car_id: ").strip()
+    model_id = input("Enter a exitsting model_id: ").strip()
+
+    run_sql("DELETE FROM ModelDriver WHERE car_id=%s AND model_id=%s",
+        [car_id, model_id], is_crud=True)
+    run_sql("DELETE FROM Rent WHERE car_id=%s AND model_id=%s",
+        [car_id, model_id], is_crud=True)
+    deleted = run_sql("DELETE FROM Model WHERE car_id=%s AND model_id=%s",
+                      [car_id, model_id], is_crud=True)
+
+    print("Model removed." if deleted else "Nothing to delete.")
 
 
 def problematic_local_drivers():
-    print("problematic_local_drivers() not yet implemented")
+    
+    rows = run_sql(
+    sql="""
+        SELECT d.driver_name
+        FROM   Driver               d
+        JOIN   Rent                 r  ON d.driver_name = r.driver_name
+        JOIN   ClientAddress        ca ON r.email       = ca.email
+        LEFT   JOIN Review          rv ON d.driver_name = rv.driver_name
+        WHERE  d.city = 'Chicago'         -- driver lives in Chicago
+            AND  ca.city = 'Chicago'        -- client has Chi-town address
+        GROUP  BY d.driver_name
+        HAVING AVG(COALESCE(rv.rating,0)) < 2.5      -- avg rating
+            AND COUNT(DISTINCT r.email)      >= 2      -- ≥ 2 distinct clients
+    """,
+    vals=[],
+    is_crud=False
+    )
+
+    if rows:
+        print("Problematic local drivers:")
+        for (name,) in rows:
+            print(f" • {name}")
+    else:
+        print("None match the criteria.")
 
 
 def driver_ratings_and_rents_by_car_brand():
-    print("driver_ratings_and_rents_by_car_brand() not yet implemented")
+    sql = """
+            WITH driver_avg AS (
+                SELECT driver_name, AVG(rating) AS avg_rating
+                FROM   Review
+                GROUP  BY driver_name
+            ),
+            brand_driver AS (
+                SELECT DISTINCT c.brand, md.driver_name
+                FROM   Car c
+                JOIN   Model m    ON c.car_id   = m.car_id
+                JOIN   ModelDriver md
+                        ON md.car_id = m.car_id AND md.model_id = m.model_id
+            ),
+            brand_rents AS (
+                SELECT c.brand, COUNT(r.rent_id) AS rent_count
+                FROM   Car   c
+                JOIN   Model m ON c.car_id = m.car_id
+                JOIN   Rent  r ON m.car_id = r.car_id AND m.model_id = r.model_id
+                GROUP  BY c.brand
+            )
+            SELECT
+                b.brand,
+                ROUND(AVG(da.avg_rating)::numeric, 2) AS avg_driver_rating,
+                COALESCE(br.rent_count, 0)            AS rent_count
+            FROM   brand_driver b
+            LEFT   JOIN driver_avg  da ON b.driver_name = da.driver_name
+            LEFT   JOIN brand_rents br ON b.brand = br.brand
+            GROUP  BY b.brand, br.rent_count
+            ORDER  BY b.brand
+            """
+    rows = run_sql(
+        sql = sql,
+        vals=[],
+        is_crud=False
+    )
+    for brand, avg_rating, rent_cnt in rows:
+        print(f"{brand:15}  avg driver rating: {avg_rating or 'N/A':>5}  rents: {rent_cnt}")
 
 
 # ─── Menu Wiring ──────────────────────────────────────────────────────────────
