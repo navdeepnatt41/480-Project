@@ -38,6 +38,8 @@ def register_manager():
         print("Invalid SSN format.")
     except Exception as e:
         print(f"Registration failed: {e}")
+    finally:
+        return 1
 
 
 def login_manager():
@@ -376,7 +378,7 @@ MENU_ACTIONS = {
     "12": driver_ratings_and_rents_by_car_brand,
 }
 
-def manager_main_menu():
+def print_manager_main_menu_options():
     options = [
         "0. Exit",
         "1. Add a Car",
@@ -392,15 +394,16 @@ def manager_main_menu():
         "11. Problematic Local Drivers",
         "12. Driver Ratings & Rents by Brand",
     ]
+    print("\nManager Main Menu")
+    utils.print_menu_options(options)
 
+def manager_main_menu():
     while True:
-        print("\nManager Main Menu")
-        utils.print_menu_options(options)
-        choice = input("> ").strip()
+        print_manager_main_menu_options()
+        choice = utils.get_user_input() 
         if choice == "0":
             print("Goodbye!")
             break
-
         action = MENU_ACTIONS.get(choice)
         if action:
             action()
@@ -425,7 +428,7 @@ def handle_manager_start_menu_option(choice: str):
     if choice == "3":
         return None
     elif choice in MANAGER_START_OPTIONS:
-        MANAGER_START_OPTIONS[choice]()
+        return MANAGER_START_OPTIONS[choice]()
     else:
         print("Invalid Command")
 
@@ -441,5 +444,8 @@ def manager_start_menu():
     while True:
         print_manager_start_menu_options()
         choice: str = utils.get_user_input() 
-        if handle_manager_start_menu_option(choice) == None:
+        result = handle_manager_start_menu_option(choice) 
+        if result == None:
             return
+        elif result == True:
+            manager_main_menu()
