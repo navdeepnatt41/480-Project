@@ -101,16 +101,31 @@ def remove_car():
 # ─── Driver Handlers ──────────────────────────────────────────────────────────
 
 def add_driver():
+    # Maybe need to fix with try catch stuff
     city      = input("Driver city: ")
     house_num = input("Driver house number: ")
     road_name = input("Driver road name: ")
     name      = input("Driver name: ")
 
-    run_sql(
-        sql="INSERT INTO Address (city, house_number, road_name) VALUES (%s, %s, %s)",
+    exists = run_sql(
+        sql=(
+            "SELECT 1 FROM Address "
+            "WHERE city = %s AND house_number = %s AND road_name = %s"
+        ),
         vals=[city, house_num, road_name],
-        is_crud=True
+        is_crud=False
     )
+
+    if not exists:
+        run_sql(
+            sql=(
+                "INSERT INTO Address (city, house_number, road_name) "
+                "VALUES (%s, %s, %s)"
+            ),
+            vals=[city, house_num, road_name],
+            is_crud=True
+        )
+
     run_sql(
         sql=(
             "INSERT INTO Driver "
@@ -122,8 +137,8 @@ def add_driver():
     )
     print("Driver added.")
 
-
 def remove_driver():
+    # Other Table Remove
     name = input("Enter driver name to remove: ")
     run_sql("DELETE FROM Driver WHERE driver_name = %s", [name], is_crud=True)
     print("Driver removed.")
@@ -153,6 +168,7 @@ def top_k_clients():
 
 
 def all_models_and_rents():
+    # Fix - Some weird bull with tables
     rows = run_sql(
         sql=(
             "SELECT m.car_id, m.model_id, COUNT(r.rent_id) "
@@ -168,6 +184,7 @@ def all_models_and_rents():
 
 
 def driver_stats():
+    # Threw an error: need to check
     rows = run_sql(
         sql=(
             "SELECT d.driver_name, COUNT(r.rent_id) AS total_rents, "
@@ -210,7 +227,7 @@ def find_clients_by_city_pair():
 # ─── What's Left ──────────────────────────────────────────
 
 def add_model():
-
+    # Check
     car_id   = input("Enter a existing car_id: ").strip()
     model_id = input("Enter the model_id: ").strip()
     color    = input("Enter the color of the car: ").strip()
@@ -238,6 +255,7 @@ def add_model():
     print("Model inserted.")
 
 def remove_model():
+    # Check
     """
     This function is for deleting a model from the model table.
     To do this we need to have car_id and model_id.
@@ -262,17 +280,33 @@ def problematic_local_drivers():
     
     rows = run_sql(
     sql="""
-        SELECT d.driver_name
-        FROM   Driver               d
-        JOIN   Rent                 r  ON d.driver_name = r.driver_name
-        JOIN   ClientAddress        ca ON r.email       = ca.email
-        LEFT   JOIN Review          rv ON d.driver_name = rv.driver_name
-        WHERE  d.city = 'Chicago'         -- driver lives in Chicago
-            AND  ca.city = 'Chicago'        -- client has Chi-town address
-        GROUP  BY d.driver_name
-        HAVING AVG(COALESCE(rv.rating,0)) < 2.5      -- avg rating
-            AND COUNT(DISTINCT r.email)      >= 2      -- ≥ 2 distinct clients
-    """,
+            WITH avg_ratings AS (
+                SELECT
+                    driver_name,
+                    AVG(rating) AS avg_rating
+                FROM Review
+                GROUP BY driver_name
+            )
+            SELECT
+                d.driver_name
+            FROM
+                Driver AS d
+            JOIN avg_ratings AS ar
+                ON d.driver_name = ar.driver_name
+            JOIN Rent AS r
+                ON d.driver_name = r.driver_name
+            JOIN ClientAddress AS ca
+                ON r.email = ca.email
+            WHERE
+                d.city  = 'Chicago'
+                AND ca.city = 'Chicago'
+            GROUP BY
+                d.driver_name, ar.avg_rating
+            HAVING
+                ar.avg_rating < 2.5
+                AND COUNT(DISTINCT r.email) >= 2;
+
+        """,
     vals=[],
     is_crud=False
     )
@@ -373,23 +407,28 @@ def manager_main_menu():
         else:
             print("Invalid choice; please select from the menu.")
 
+MANAGER_START_OPTIONS = {
+    "1" : login_manager,
+    "2" : register_manager,
+    "x" : "EXIT" 
+}
+
+def handle_manager_start_menu_option(choice: str):
+    if choice == "x":
+        return None
+    elif choice in MANAGER_START_OPTIONS:
+        MANAGER_START_OPTIONS[choice]()
+    else:
+        print("Invalid Command")
+
+def print_manager_start_menu_options() -> None:
+    options = ["1. Login", "2. Register", "3. Return to Main Menu"]
+    utils.print_menu_options(options)
 
 def manager_start_menu():
     """Initial login/register loop."""
-    options = ["1. Login", "2. Register", "3. Return to Main Menu"]
     while True:
-        utils.print_menu_options(options)
-        choice = input("> ").strip()
-        if choice == "1":
-            if login_manager():
-                manager_main_menu()
-        elif choice == "2":
-            register_manager()
-        elif choice == "3" or choice.lower() == "x":
-            break
-        else:
-            print("Invalid command.")
-
-
-if __name__ == "__main__":
-    manager_start_menu()
+        print_manager_start_menu_options()
+        choice: str = utils.get_user_input() 
+        if handle_manager_start_menu_option() == None:
+            return
