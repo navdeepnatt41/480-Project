@@ -18,8 +18,8 @@ def handle_menu_option(selected_option: str) -> None:
     -     If the user command is valid (i.e. a valid string in MAIN_MENU_OPTIONS), calls the function
     -     If the user command is invalid, exits
 
-  Parameters:
-  selected_option (str): The user's command entered in the terminal
+  Args:
+      selected_option (str): The user's command entered in the terminal
   """
   if selected_option in MAIN_MENU_OPTIONS.keys():
     MAIN_MENU_OPTIONS[selected_option]()

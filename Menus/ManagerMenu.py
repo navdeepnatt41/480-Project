@@ -410,11 +410,19 @@ def manager_main_menu():
 MANAGER_START_OPTIONS = {
     "1" : login_manager,
     "2" : register_manager,
-    "x" : "EXIT" 
+    "3" : None
 }
 
 def handle_manager_start_menu_option(choice: str):
-    if choice == "x":
+    """
+    Handles calling the start menu option handles based off of the user choice; if
+    choice is 3, returns None to signal exit from ManagerMenu
+
+
+    Args:
+        choice (str): The user input  
+    """
+    if choice == "3":
         return None
     elif choice in MANAGER_START_OPTIONS:
         MANAGER_START_OPTIONS[choice]()
@@ -422,6 +430,9 @@ def handle_manager_start_menu_option(choice: str):
         print("Invalid Command")
 
 def print_manager_start_menu_options() -> None:
+    """
+    Prints the manager start menu options to the screen 
+    """
     options = ["1. Login", "2. Register", "3. Return to Main Menu"]
     utils.print_menu_options(options)
 
@@ -430,5 +441,5 @@ def manager_start_menu():
     while True:
         print_manager_start_menu_options()
         choice: str = utils.get_user_input() 
-        if handle_manager_start_menu_option() == None:
+        if handle_manager_start_menu_option(choice) == None:
             return
