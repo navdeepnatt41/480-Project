@@ -1,37 +1,50 @@
 import utils
 from Backend.db_conn import run_sql
 
-# ─── Auth Handlers ─────────────────────────────────────────────────────────────
+def get_manager_registration_input() -> tuple[str, str, str, bool]:
+    """
+    Retrieves the necessary manager information required from the user input.
+    Parses and does error checking: fails if error checking went bad
+
+    Returns:
+        - tuple[str, str, str, bool]: [ssn, name, email, successful_parse]
+                                    If successful_parse is false, the first 3 values are supplied as empty strings 
+    """
+    ssn: str = (input("Enter Your SSN: "))
+    if len(ssn) != 9:
+        print("Invalid ssn")
+        return ("","","",False)
+    name: str = input("Enter Your Name: ")
+    email: str = input("Enter Your Email: ")
+    return (ssn, name, email, True)
+
 
 def register_manager():
     """
     Register a brand new manager.
     """
     try:
-        ssn   = (input("Enter Your SSN: "))
-        if len(ssn) < 8:
-            print("Haram")
-            return
-        name  = input("Enter Your Name: ")
-        email = input("Enter Your Email: ")
+        (ssn, name, email, successful_parse) = get_manager_registration_input()
 
-        # Probably use regex for SSN parsing
-        # Check for existing SSN
+        if not successful_parse:
+            return None
+        
         exists = run_sql(
             sql="SELECT COUNT(*) FROM Managers WHERE ssn = %s",
             vals=[ssn],
             is_crud=False
         )[0][0]
+
         if exists:
             print("Error: Manager already exists.")
             return
 
-        # Insert new manager
         run_sql(
             sql="INSERT INTO Managers (ssn, name, email) VALUES (%s, %s, %s)",
             vals=[ssn, name, email],
             is_crud=True
         )
+        
         print("Manager registered successfully.")
 
     except ValueError:
@@ -40,7 +53,6 @@ def register_manager():
         print(f"Registration failed: {e}")
     finally:
         return 1
-
 
 def login_manager():
     """
@@ -67,9 +79,6 @@ def login_manager():
         print(f"Login error: {e}")
     return False
 
-
-# ─── Car Handlers ──────────────────────────────────────────────────────────────
-
 def add_car():
     car_id = input("Enter new car ID: ")
     brand  = input("Enter car brand: ")
@@ -89,7 +98,6 @@ def add_car():
         )
         print("Car inserted.")
 
-
 def remove_car():
     car_id = input("Enter car ID to delete: ")
     # delete in correct dependency order
@@ -99,11 +107,56 @@ def remove_car():
     run_sql("DELETE FROM Car WHERE car_id = %s",      [car_id], is_crud=True)
     print("Car deleted.")
 
+def add_model():
+    car_id   = input("Enter a existing car_id: ").strip()
+    model_id = input("Enter the model_id: ").strip()
+    color    = input("Enter the color of the car: ").strip()
+    year     = input("Enter the year of the car (YYYY): ").strip()
+    trans    = input("Enter the transmission of the car (manual/automatic): ").strip().lower()
 
-# ─── Driver Handlers ──────────────────────────────────────────────────────────
+    # Error checking
+    if not run_sql("SELECT 1 FROM Car WHERE car_id = %s",
+                [car_id], is_crud=False):
+        print("That car_id is not in Car.  Insert the car first.")
+        return
+    if run_sql("SELECT 1 FROM Model WHERE car_id = %s AND model_id = %s",
+               [car_id, model_id], is_crud=False):
+        print("That (car_id, model_id) already exists.")
+        return
+
+    # Insert user input into the database
+    run_sql(
+        sql=("INSERT INTO Model "
+             "(model_id, color, year, transmission, car_id) "
+             "VALUES (%s, %s, %s, %s, %s)"),
+        vals=[model_id, color, f"{year}-01-01", trans, car_id],  # DATE needs YYYY-MM-DD
+        is_crud=True
+    )
+    print("Model inserted.")
+
+def remove_model():
+    """
+    This function is for deleting a model from the model table.
+    To do this we need to have car_id and model_id.
+    We also need to take into account the ModelDriver table.
+    If we are going to delete the model that has a particular model_id
+    we also need to delete it from the ModelDriver table.   
+    """
+    car_id = input("Enter a existing car_id: ").strip()
+    model_id = input("Enter a exitsting model_id: ").strip()
+
+    run_sql("DELETE FROM ModelDriver WHERE car_id=%s AND model_id=%s",
+        [car_id, model_id], is_crud=True)
+    run_sql("DELETE FROM Rent WHERE car_id=%s AND model_id=%s",
+        [car_id, model_id], is_crud=True)
+    deleted = run_sql("DELETE FROM Model WHERE car_id=%s AND model_id=%s",
+                      [car_id, model_id], is_crud=True)
+    # print("Model removed." if deleted else "Nothing to delete.")
+    print("Deletion Operation Successful")
 
 def add_driver():
     # Maybe need to fix with try catch stuff
+    # Driver Error stuff again - major issue with a driver not inserting
     city      = input("Driver city: ")
     house_num = input("Driver house number: ")
     road_name = input("Driver road name: ")
@@ -140,13 +193,47 @@ def add_driver():
     print("Driver added.")
 
 def remove_driver():
-    # Other Table Remove
-    name = input("Enter driver name to remove: ")
-    run_sql("DELETE FROM Driver WHERE driver_name = %s", [name], is_crud=True)
-    print("Driver removed.")
+    """
+    Remove a driver and all of their associated records.
+    """
+    # Major issue; it seems a driver isn't being found and then removed
+    name = input("Enter driver name to remove: ").strip()
 
+    # 1) Verify the driver exists
+    exists = run_sql(
+        sql="SELECT 1 FROM Driver WHERE driver_name = %s",
+        vals=[name],
+        is_crud=False
+    )
+    if not exists:
+        print(f"No driver found with name '{name}'.")
+        return
 
-# ─── Reporting Handlers ──────────────────────────────────────────────────────
+    # 2) Delete dependent records in the correct order
+    run_sql(
+        sql="DELETE FROM ModelDriver WHERE driver_name = %s",
+        vals=[name],
+        is_crud=True
+    )
+    run_sql(
+        sql="DELETE FROM Rent        WHERE driver_name = %s",
+        vals=[name],
+        is_crud=True
+    )
+    run_sql(
+        sql="DELETE FROM Review      WHERE driver_name = %s",
+        vals=[name],
+        is_crud=True
+    )
+
+    # 3) Finally delete the driver
+    run_sql(
+        sql="DELETE FROM Driver      WHERE driver_name = %s",
+        vals=[name],
+        is_crud=True
+    )
+
+    print(f"Driver '{name}' and all related records removed.")
 
 def top_k_clients():
     try:
@@ -225,59 +312,6 @@ def find_clients_by_city_pair():
     for email, name in rows:
         print(f"{name} <{email}>")
 
-
-# ─── What's Left ──────────────────────────────────────────
-
-def add_model():
-    # Check
-    car_id   = input("Enter a existing car_id: ").strip()
-    model_id = input("Enter the model_id: ").strip()
-    color    = input("Enter the color of the car: ").strip()
-    year     = input("Enter the year of the car (YYYY): ").strip()
-    trans    = input("Enter the transmission of the car (manual/automatic): ").strip().lower()
-
-    # Error checking
-    if not run_sql("SELECT 1 FROM Car WHERE car_id = %s",
-                [car_id], is_crud=False):
-        print("That car_id is not in Car.  Insert the car first.")
-        return
-    if run_sql("SELECT 1 FROM Model WHERE car_id = %s AND model_id = %s",
-               [car_id, model_id], is_crud=False):
-        print("That (car_id, model_id) already exists.")
-        return
-
-    # Insert user input into the database
-    run_sql(
-        sql=("INSERT INTO Model "
-             "(model_id, color, year, transmission, car_id) "
-             "VALUES (%s, %s, %s, %s, %s)"),
-        vals=[model_id, color, f"{year}-01-01", trans, car_id],  # DATE needs YYYY-MM-DD
-        is_crud=True
-    )
-    print("Model inserted.")
-
-def remove_model():
-    # Check
-    """
-    This function is for deleting a model from the model table.
-    To do this we need to have car_id and model_id.
-    We also need to take into account the ModelDriver table.
-    If we are going to delete the model that has a particular model_id
-    we also need to delete it from the ModelDriver table.   
-    """
-    car_id = input("Enter a existing car_id: ").strip()
-    model_id = input("Enter a exitsting model_id: ").strip()
-
-    run_sql("DELETE FROM ModelDriver WHERE car_id=%s AND model_id=%s",
-        [car_id, model_id], is_crud=True)
-    run_sql("DELETE FROM Rent WHERE car_id=%s AND model_id=%s",
-        [car_id, model_id], is_crud=True)
-    deleted = run_sql("DELETE FROM Model WHERE car_id=%s AND model_id=%s",
-                      [car_id, model_id], is_crud=True)
-
-    print("Model removed." if deleted else "Nothing to delete.")
-
-
 def problematic_local_drivers():
     
     rows = run_sql(
@@ -320,7 +354,6 @@ def problematic_local_drivers():
     else:
         print("None match the criteria.")
 
-
 def driver_ratings_and_rents_by_car_brand():
     sql = """
             WITH driver_avg AS (
@@ -359,9 +392,6 @@ def driver_ratings_and_rents_by_car_brand():
     )
     for brand, avg_rating, rent_cnt in rows:
         print(f"{brand:15}  avg driver rating: {avg_rating or 'N/A':>5}  rents: {rent_cnt}")
-
-
-# ─── Menu Wiring ──────────────────────────────────────────────────────────────
 
 MENU_ACTIONS = {
     "1": add_car,
