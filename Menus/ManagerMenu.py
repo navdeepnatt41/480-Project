@@ -7,8 +7,8 @@ def get_manager_registration_input() -> tuple[str, str, str, bool]:
     Parses and does error checking: fails if error checking went bad
 
     Returns:
-        - tuple[str, str, str, bool]: [ssn, name, email, successful_parse]
-                                    If successful_parse is false, the first 3 values are supplied as empty strings 
+        -   tuple[str, str, str, bool]: [ssn, name, email, successful_parse]
+            -    If successful_parse is false, the first 3 values are supplied as empty strings 
     """
     ssn: str = (input("Enter Your SSN: "))
     if len(ssn) != 9:
