@@ -14,7 +14,8 @@ def declare_models():
   pass
 
 def driver_main_menu():
-  while True:
+  # while True:
+  pass
     
 
 def handle_login():
