@@ -4,7 +4,13 @@ This file is responsible for creating and returning the connection to the postgr
 
 import psycopg2 as ps
 
-conn = ps.connect(database="taxi_db", user="postgres")
+conn = ps.connect(
+  host = "localhost",
+  port = 5432,
+  database = "ProjectCS480",
+  user = "postgres",
+  password = "Hitachi@123"
+  )
 
 def run_sql(sql: str, vals: list, is_crud: bool): 
   with conn:
@@ -18,7 +24,7 @@ def run_sql(sql: str, vals: list, is_crud: bool):
         else:
           conn.commit()
       except ps.Error as e:
-        print("Error Occurred: " + e)
+        print("Error Occurred: " + str(e))
         conn.rollback()
 
 def kill_conn() -> None:

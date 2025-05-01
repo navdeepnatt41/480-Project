@@ -3,6 +3,7 @@ This file is the main file that starts the entire application. It has a main men
 """
 import utils
 from Menus import ManagerMenu
+from Menus import ClientMenu
 
 def main_menu() -> None:
   """
@@ -16,6 +17,8 @@ def main_menu() -> None:
     match selected_option:
       case "1":
         # Start Client Menu 
+        print("Welcome client!!\nPlease select an option:")
+        ClientMenu.client_start_menu()
         pass
       case "2":
         # Start Driver Menu

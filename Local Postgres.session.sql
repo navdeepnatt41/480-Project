@@ -213,6 +213,38 @@ SELECT r.new_id, '2025-05-10', 1, 100, bd.driver_name, 'kavya@gmail.com'
 FROM BestDriver bd, IsModelAvailable, RentID r;
 
 
+-- Ignore below queries
+
+select * from address;
+select * from clientaddress;
+select * from creditcard;
+
+INSERT INTO car (car_id, brand) VALUES
+(1, 'Toyota'),
+(2, 'Honda'),
+(3, 'Ford');
+
+INSERT INTO model (car_id, model_id, color, year, transmission) VALUES
+(1, 100, 'Red', '2020-01-01', 'Automatic'),
+(2, 200, 'Blue', '2021-01-01', 'Manual'),
+(3, 300, 'Black', '2022-01-01', 'Automatic');
+
+INSERT INTO driver (driver_name, city, house_number, road_name) VALUES
+('Alice', 'naperville', 1234, 'naperville dr'),
+('Bob', 'devon', 1234, 'devon dr'),
+('Charlie', 'aurora', 1234, 'aurora dr');
+
+INSERT INTO modeldriver (driver_name, car_id, model_id) VALUES
+('Alice', 1, 100),
+('Bob', 2, 200),
+('Charlie', 3, 300),
+('Alice', 2, 200);
+
+INSERT INTO rent (rent_id, rent_date, car_id, model_id, driver_name, email) VALUES
+(1, '2024-05-01', 1, 100, 'Alice', 'kavya@gmail.com');
+
+select * from review;
+select * from rent;
 
 
 
