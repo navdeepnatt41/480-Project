@@ -71,7 +71,7 @@ CREATE TABLE Car (
 CREATE TABLE Model (                    --     # 1 i.e. Car <---> Model
     model_id int,
     color varchar(40),
-    year DATE,
+    year int,                           -- Can only be 4 digits long,  1950 < year < 2025
     transmission varchar(30),
 
     car_id int NOT NULL, -- added #1

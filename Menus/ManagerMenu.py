@@ -51,8 +51,6 @@ def register_manager():
         print("Invalid SSN format.")
     except Exception as e:
         print(f"Registration failed: {e}")
-    finally:
-        return 1
 
 def login_manager():
     """
@@ -60,8 +58,8 @@ def login_manager():
     """
     try:
         ssn = (input("Enter Your SSN: "))
-        if len(ssn) < 8:
-            print("Extra not good")
+        if len(ssn) != 9:
+            print("Invalid SSN")
             return
         exists = run_sql(
             sql="SELECT COUNT(*) FROM Managers WHERE ssn = %s",
@@ -81,6 +79,9 @@ def login_manager():
 
 def add_car():
     car_id = input("Enter new car ID: ")
+    if not car_id.isdigit():
+        print("Car ID must be an integer.") 
+        return
     brand  = input("Enter car brand: ")
 
     exists = run_sql(
@@ -100,21 +101,40 @@ def add_car():
 
 def remove_car():
     car_id = input("Enter car ID to delete: ")
-    # delete in correct dependency order
+    
     run_sql("DELETE FROM Rent WHERE car_id = %s",     [car_id], is_crud=True)
     run_sql("DELETE FROM ModelDriver WHERE car_id = %s",[car_id], is_crud=True)
     run_sql("DELETE FROM Model WHERE car_id = %s",    [car_id], is_crud=True)
     run_sql("DELETE FROM Car WHERE car_id = %s",      [car_id], is_crud=True)
+   
     print("Car deleted.")
 
-def add_model():
+def get_add_model_input() -> tuple[str, str, str, str, str]: 
+    """
+    Prompts the user to input information related to inserting a model into the database
+
+    Returns:
+        -   tuple[str, str, str, str, str]: (car_id, model_id, color, year, trans(mission))
+    """
     car_id   = input("Enter a existing car_id: ").strip()
     model_id = input("Enter the model_id: ").strip()
     color    = input("Enter the color of the car: ").strip()
     year     = input("Enter the year of the car (YYYY): ").strip()
     trans    = input("Enter the transmission of the car (manual/automatic): ").strip().lower()
+    return (car_id, model_id, color, year, trans)
 
-    # Error checking
+def add_model():
+    """
+    Retrieves model information from the user to be input into the taxi application 
+    """
+    (car_id, model_id, color, year, trans) = get_add_model_input()
+
+    if not year.isdigit():
+        print("Year needs to be number")
+        return
+    if not ((int(year) >= 1900) and (int(year) <= 2025)):
+        print("Wrong Year Format")
+        return
     if not run_sql("SELECT 1 FROM Car WHERE car_id = %s",
                 [car_id], is_crud=False):
         print("That car_id is not in Car.  Insert the car first.")
@@ -129,7 +149,7 @@ def add_model():
         sql=("INSERT INTO Model "
              "(model_id, color, year, transmission, car_id) "
              "VALUES (%s, %s, %s, %s, %s)"),
-        vals=[model_id, color, f"{year}-01-01", trans, car_id],  # DATE needs YYYY-MM-DD
+        vals=[model_id, color, f"{year}", trans, car_id],  # DATE needs YYYY-MM-DD
         is_crud=True
     )
     print("Model inserted.")
@@ -143,7 +163,7 @@ def remove_model():
     we also need to delete it from the ModelDriver table.   
     """
     car_id = input("Enter a existing car_id: ").strip()
-    model_id = input("Enter a exitsting model_id: ").strip()
+    model_id = input("Enter a existing model_id: ").strip()
 
     run_sql("DELETE FROM ModelDriver WHERE car_id=%s AND model_id=%s",
         [car_id, model_id], is_crud=True)
@@ -151,12 +171,9 @@ def remove_model():
         [car_id, model_id], is_crud=True)
     deleted = run_sql("DELETE FROM Model WHERE car_id=%s AND model_id=%s",
                       [car_id, model_id], is_crud=True)
-    # print("Model removed." if deleted else "Nothing to delete.")
     print("Deletion Operation Successful")
 
 def add_driver():
-    # Maybe need to fix with try catch stuff
-    # Driver Error stuff again - major issue with a driver not inserting
     city      = input("Driver city: ")
     house_num = input("Driver house number: ")
     road_name = input("Driver road name: ")
@@ -196,10 +213,8 @@ def remove_driver():
     """
     Remove a driver and all of their associated records.
     """
-    # Major issue; it seems a driver isn't being found and then removed
     name = input("Enter driver name to remove: ").strip()
 
-    # 1) Verify the driver exists
     exists = run_sql(
         sql="SELECT 1 FROM Driver WHERE driver_name = %s",
         vals=[name],
@@ -209,7 +224,6 @@ def remove_driver():
         print(f"No driver found with name '{name}'.")
         return
 
-    # 2) Delete dependent records in the correct order
     run_sql(
         sql="DELETE FROM ModelDriver WHERE driver_name = %s",
         vals=[name],
@@ -226,7 +240,6 @@ def remove_driver():
         is_crud=True
     )
 
-    # 3) Finally delete the driver
     run_sql(
         sql="DELETE FROM Driver      WHERE driver_name = %s",
         vals=[name],
@@ -289,28 +302,34 @@ def driver_stats():
     for name, total, avg in rows:
         print(f"{name}: {total} rents, avg rating {avg:.2f}")
 
-
 def find_clients_by_city_pair():
-    c1 = input("City #1: ")
-    c2 = input("City #2: ")
+    c1 = input("City #1: ").strip()
+    c2 = input("City #2: ").strip()
+
     rows = run_sql(
         sql=(
             "SELECT DISTINCT c.email, c.client_name "
             "FROM Client c "
             "  JOIN ClientAddress ca ON c.email = ca.email "
-            "  JOIN Address a1 ON (ca.city,a1.house_number,ca.road_name) = "
-            "                   (a1.city,a1.house_number,a1.road_name) "
+            "  JOIN Address a1 "
+            "    ON ca.city        = a1.city "
+            "   AND ca.house_number = a1.house_number "
+            "   AND ca.road_name    = a1.road_name "
             "  JOIN Rent r ON c.email = r.email "
             "  JOIN Driver d ON r.driver_name = d.driver_name "
-            "  JOIN Address a2 ON (d.city,d.house_number,d.road_name) = "
-            "                   (a2.city,a2.house_number,a2.road_name) "
+            "  JOIN Address a2 "
+            "    ON d.city        = a2.city "
+            "   AND d.house_number = a2.house_number "
+            "   AND d.road_name    = a2.road_name "
             "WHERE a1.city = %s AND a2.city = %s"
         ),
         vals=[c1, c2],
         is_crud=False
     )
+
     for email, name in rows:
-        print(f"{name} <{email}>")
+        print(f"{name} - {email}")
+
 
 def problematic_local_drivers():
     
@@ -350,7 +369,7 @@ def problematic_local_drivers():
     if rows:
         print("Problematic local drivers:")
         for (name,) in rows:
-            print(f" • {name}")
+            print(f"{name}")
     else:
         print("None match the criteria.")
 
@@ -391,7 +410,7 @@ def driver_ratings_and_rents_by_car_brand():
         is_crud=False
     )
     for brand, avg_rating, rent_cnt in rows:
-        print(f"{brand:15}  avg driver rating: {avg_rating or 'N/A':>5}  rents: {rent_cnt}")
+        print(f"{brand}  avg driver rating: {avg_rating}  rents: {rent_cnt}")
 
 MENU_ACTIONS = {
     "1": add_car,

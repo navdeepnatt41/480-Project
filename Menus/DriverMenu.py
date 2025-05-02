@@ -8,16 +8,17 @@ import utils
 driver_name: str = ""
 
 def get_address_input() -> tuple[str, str, str]:
-  """
-  Parses and returns the user input for `change_address`
+    """
+    Parses and returns the user input for `change_address`
 
-  Returns:
-      -   tuple[str, str, str]: [city, house_num, road_name]
-  """
-  city        = input("  New city: ").strip()
-  house_num   = input("  House number: ").strip()
-  road_name   = input("  Road name: ").strip()
-  return (city, house_num, road_name)
+    Returns:
+        -   tuple[str, str, str]: [city, house_num, road_name]
+    """
+    city      = input("  New city: ").strip()
+    house_num = input("  House number: ").strip()
+    road_name = input("  Road name: ").strip()
+    return (city, house_num, road_name)
+
 
 def change_address():
     print("-- Change Address --")
@@ -26,11 +27,10 @@ def change_address():
     db.run_sql(
         sql="""INSERT INTO Address (city, house_number, road_name)
                VALUES (%s,%s,%s)
-               ON CONFLICT DO NOTHING""",          # harmless if it already exists
+               ON CONFLICT DO NOTHING""",
         vals=[city, house_num, road_name],
         is_crud=True
     )
-    breakpoint()
     db.run_sql(
         sql="""UPDATE Driver
                SET city = %s, house_number = %s, road_name = %s
@@ -43,10 +43,10 @@ def change_address():
 
 def list_car_models():
     rows = db.run_sql(
-        sql = """
+        sql="""
             SELECT c.car_id, c.brand,
                    m.model_id, m.color,
-                   EXTRACT(YEAR FROM m.year)::int AS year,
+                   m.year       AS year,
                    m.transmission
             FROM   Car   c
             JOIN   Model m ON c.car_id = m.car_id
@@ -75,7 +75,9 @@ def declare_drivable_models():
 
         try:
             car_id, model_id = ids.split()
-        except ValueError:
+            car_id = int(car_id)
+            model_id = int(model_id) 
+        except (TypeError, ValueError):
             print("Enter two integers separated by a space.")
             continue
 
@@ -103,72 +105,77 @@ def declare_drivable_models():
 
 
 MENU_ACTIONS = {
-  "1":change_address,
-  "2":list_car_models,
-  "3":declare_drivable_models
+    "1": change_address,
+    "2": list_car_models,
+    "3": declare_drivable_models
 }
 
 def print_driver_main_menu_opts() -> None:
-   """
-   Prints the main menu options for driver 
-   """
-   print("Please select a numerical option or 'x' to exit: ")
-   utils.print_menu_options(["0. Exit", "1. Change Your Address", "2. List all Car Models", "3. Declare a Drivable Models"])
+    """
+    Prints the main menu options for driver
+    """
+    print("Please select a numerical option or 'x' to exit: ")
+    utils.print_menu_options([
+        "0. Exit",
+        "1. Change Your Address",
+        "2. List all Car Models",
+        "3. Declare a Drivable Models"
+    ])
 
 def driver_main_menu(dri: str):
-  global driver_name
-  driver_name = dri 
-  breakpoint()
-  while True:
-    print_driver_main_menu_opts()
-    command = utils.get_user_input()
-    if (command != "0"):
-      MENU_ACTIONS[command]()
-    else:
-      return
+    global driver_name
+    driver_name = dri
+    while True:
+        print_driver_main_menu_opts()
+        command = utils.get_user_input()
+        if command != "0":
+            MENU_ACTIONS[command]()
+        else:
+            return
 
 def handle_login():
-  driver_name: str = input("Name: ")
-  sql: str = "SELECT 1 FROM Driver WHERE driver_name = %s"
-  result = db.run_sql(sql = sql, vals = [driver_name], is_crud = False)
-  if result[0][0] > 0:
-    print("Driver Main Menu") 
-    driver_main_menu(driver_name)
-  else:
-    print("Invalid Driver")
+    driver_input: str = input("Name: ")
+    sql: str = "SELECT 1 FROM Driver WHERE driver_name = %s"
+    result = db.run_sql(sql=sql, vals=[driver_input], is_crud=False)
+    if result and result[0][0] > 0:
+        print("Driver Main Menu")
+        driver_main_menu(driver_input)
+    else:
+        print("Invalid Driver")
 
 def empty_func() -> None:
-  pass
+    pass
 
 DRIVER_LOGIN_OPTIONS = {
-   "1":(handle_login, False),
-   "x":(empty_func, True)
+    "1": (handle_login, False),
+    "x": (empty_func, True)
 }
 
 def handle_driver_login_user_inputs(command: str):
-  """
-  Matches user input at login stage to a function call 
+    """
+    Matches user input at login stage to a function call
 
-  Returns:
-      -   bool: Condition checking whether the command is a request to exit the login menu
-                or calling login menu
-  """
-  if command in DRIVER_LOGIN_OPTIONS.keys():
-    DRIVER_LOGIN_OPTIONS[command][0]()
-    return DRIVER_LOGIN_OPTIONS[command][1]
-  else:    
-    print("Invalid Command")
-    
+    Returns:
+        -   bool: Condition checking whether the command is a request to exit the login menu
+                  or calling login menu
+    """
+    if command in DRIVER_LOGIN_OPTIONS:
+        DRIVER_LOGIN_OPTIONS[command][0]()
+        return DRIVER_LOGIN_OPTIONS[command][1]
+    else:
+        print("Invalid Command")
+
+
 def print_driver_login_menu() -> None:
-   """
-   Prints the driving menu option 
-   """
-   print("1. Login")
+    """
+    Prints the driving menu option
+    """
+    print("1. Login")
 
 def driver_login_menu():
-  print("Welcome, Driver! Please Login OR press 'x' to exit")
-  while True:
-    print_driver_login_menu()
-    command = utils.get_user_input()
-    if (handle_driver_login_user_inputs(command) is True):
-       return
+    print("Welcome, Driver! Please Login OR press 'x' to exit")
+    while True:
+        print_driver_login_menu()
+        command = utils.get_user_input()
+        if handle_driver_login_user_inputs(command) is True:
+            return

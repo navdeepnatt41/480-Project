@@ -3,13 +3,13 @@ This file is the main file that starts the entire application. It has a main men
 """
 import utils
 from Menus import ManagerMenu, DriverMenu, ClientMenu
+from typing import Callable
+import sys
 
-
-MAIN_MENU_OPTIONS = {
+MAIN_MENU_OPTIONS: dict[str, Callable] = {
   "1" : ClientMenu.client_start_menu,
   "2" : DriverMenu.driver_login_menu,
   "3" : ManagerMenu.manager_start_menu,
-  "x" : exit
 }
 
 def handle_menu_option(selected_option: str) -> None:
@@ -23,6 +23,9 @@ def handle_menu_option(selected_option: str) -> None:
   """
   if selected_option in MAIN_MENU_OPTIONS.keys():
     MAIN_MENU_OPTIONS[selected_option]()
+  elif selected_option == "x":
+    print("Farewell!")
+    sys.exit(0)
   else:
     print("Invalid Command. Please try again...")
 
