@@ -1,2 +1,2 @@
 # 480 Project
-What else do you think it is, 418? Cope and Seethe Liberals.
+This repositroy contains all the code and miscellaneous materials used for the final projected for our Databases course.
